@@ -41,8 +41,9 @@ def train(model, dataset, optimizer, batch_size=1):
         print(loss)
 
 
-input_folder = 'data'
-dataset = images_from_folder(input_folder, batch_size=1)
+input_url = '/Users/metuoku/data/cityscapes/leftImg8bit/train/*/*.png'
+batch_size = 2
+dataset = images_from_folder(input_url, batch_size=batch_size)
 fcn = resnet50_fcn(n_classes=8)
 for i in range(10):
-    train(fcn, dataset, tf.keras.optimizers.Adam())
+    train(fcn, dataset, tf.keras.optimizers.Adam(), batch_size)
