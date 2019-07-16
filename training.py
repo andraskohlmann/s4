@@ -43,7 +43,7 @@ def consistence_loss(predictions, params):
 
 
 # @tf.function
-def train(model, batch_data, optimizer, batch_size=1):
+def train(model, batch_data, optimizer):
     with tf.GradientTape() as tape:
         images, labels = batch_data
         logits = model(images)
@@ -55,6 +55,18 @@ def train(model, batch_data, optimizer, batch_size=1):
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
         return loss, images, labels, preds
+
+
+# @tf.function
+def validate(model, batch_data):
+    images, labels = batch_data
+    logits = model(images)
+
+    preds = tf.argmax(tf.nn.softmax(logits), axis=-1)
+
+    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+    loss = tf.reduce_mean(loss)
+    return loss, images, labels, preds
 
 
 resolution = [int(_) for _ in FLAGS.resolution]
@@ -85,7 +97,7 @@ for i in range(FLAGS.epoch):
         print('train epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
         for batch_image in tqdm(train_dataset, total=train_size//FLAGS.batch_size):
-            loss, ims, labels, preds = train(fcn, batch_image, adam, FLAGS.batch_size)
+            loss, ims, labels, preds = train(fcn, batch_image, adam)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
@@ -102,7 +114,7 @@ for i in range(FLAGS.epoch):
         print('val epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
         for batch_image in tqdm(val_dataset, total=val_size//FLAGS.batch_size):
-            loss, images, lbls, preds = train(fcn, batch_image, adam, FLAGS.batch_size)
+            loss, ims, lbls, preds = validate(fcn, batch_image)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
