@@ -52,8 +52,8 @@ for i in range(10):
     for batch_image in dataset:
         loss, images, labels, preds = train(fcn, batch_image, adam, batch_size)
         print(loss)
-        plt.imsave("out/{}_{}.png".format(i, b), images[0])
+        plt.imsave("out/{}_{}.png".format(i, b), images[0].numpy())
 
-        plt.imsave("out/{}_{}_lab.png".format(i, b), labels[0])
-        plt.imsave("out/{}_{}_pred.png".format(i, b), preds[0])
+        plt.imsave("out/{}_{}_lab.png".format(i, b), labels[0].numpy())
+        plt.imsave("out/{}_{}_pred.png".format(i, b), preds[0].numpy())
         b += 1
