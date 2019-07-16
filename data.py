@@ -24,10 +24,10 @@ def parser_wrapper(resize_dims):
 def cityscapes(data_url, state, resize_dims, batch_size, limit=-1):
     img_filenames = sorted(glob.glob(os.path.join(data_url, 'leftImg8bit', state, '*', '*.png')))
     labels_filenames = sorted(glob.glob(os.path.join(data_url, 'gtFine', state, '*', '*_labelIds.png')))
-    img_filenames = tf.data.Dataset.from_tensor_slices(tf.constant(img_filenames))
-    labels_filenames = tf.data.Dataset.from_tensor_slices(tf.constant(labels_filenames))
-    img_labels_filenames = tf.data.Dataset.zip((img_filenames, labels_filenames))
+    img_filenames_t = tf.data.Dataset.from_tensor_slices(tf.constant(img_filenames))
+    labels_filenames_t = tf.data.Dataset.from_tensor_slices(tf.constant(labels_filenames))
+    img_labels_filenames = tf.data.Dataset.zip((img_filenames_t, labels_filenames_t))
     dataset = img_labels_filenames.map(parser_wrapper(resize_dims=resize_dims))
     dataset = dataset.take(limit).shuffle(1000).batch(batch_size)
-    return dataset
+    return dataset, len(img_filenames) if limit == -1 else limit
 

@@ -1,6 +1,7 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.python.platform import flags
+from tqdm import tqdm
 
 from data import cityscapes
 from model import resnet50_fcn
@@ -57,14 +58,14 @@ def train(model, batch_data, optimizer, batch_size=1):
 
 
 resolution = [int(_) for _ in FLAGS.resolution]
-train_dataset = cityscapes(
+train_dataset, train_size = cityscapes(
     FLAGS.input,
     state='train',
     resize_dims=resolution,
     batch_size=FLAGS.batch_size,
     limit=FLAGS.limit
 )
-val_dataset = cityscapes(
+val_dataset, val_size = cityscapes(
     FLAGS.input,
     state='val',
     resize_dims=resolution,
@@ -83,7 +84,7 @@ for i in range(FLAGS.epoch):
     with train_summary_writer.as_default():
         print('train epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
-        for batch_image in train_dataset:
+        for batch_image in tqdm(train_dataset, total=train_size//FLAGS.batch_size):
             loss, ims, labels, preds = train(fcn, batch_image, adam, FLAGS.batch_size)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:
@@ -100,7 +101,7 @@ for i in range(FLAGS.epoch):
     with val_summary_writer.as_default():
         print('val epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
-        for batch_image in val_dataset:
+        for batch_image in tqdm(val_dataset, total=val_size//FLAGS.batch_size):
             loss, images, lbls, preds = train(fcn, batch_image, adam, FLAGS.batch_size)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:
