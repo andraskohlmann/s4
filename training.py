@@ -4,6 +4,9 @@ from tensorflow.python.platform import flags
 
 from data import cityscapes
 from model import resnet50_fcn
+from utils import allow_growth
+
+allow_growth()
 
 FLAGS = flags.FLAGS
 
