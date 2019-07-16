@@ -1,6 +1,7 @@
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
-from data import images_from_folder
+from data import cityscapes
 from model import resnet50_fcn
 
 
@@ -17,7 +18,7 @@ def augment(image):
 # @tf.function
 def consistence_loss(predictions, params):
     augmented_preds = tf.unstack(predictions[1:])
-    loss = 0
+    loss = 0.
     for i, pred in enumerate(augmented_preds):
         augmented = predictions[0]
         if params['flip'][i + 1] == 1:
@@ -27,23 +28,32 @@ def consistence_loss(predictions, params):
 
 
 # @tf.function
-def train(model, dataset, optimizer, batch_size=1):
-    for batch_image in dataset:
-        with tf.GradientTape() as tape:
-            loss = 0
-            for image in batch_image:
-                variations, params = augment(image)
-                predictions = model(variations)
-                loss += consistence_loss(predictions, params)
-                # loss += confidence_loss(predictions)
-            gradients = tape.gradient(loss/batch_size, model.trainable_variables)
-            optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
-        print(loss)
+def train(model, batch_data, optimizer, batch_size=1):
+    with tf.GradientTape() as tape:
+        images, labels = batch_data
+        logits = model(images)
+
+        preds = tf.argmax(tf.nn.softmax(logits), axis=-1)
+
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss = tf.reduce_mean(loss)
+        gradients = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
+        return loss, images, labels, preds
 
 
-input_url = '/Users/metuoku/data/cityscapes/leftImg8bit/train/*/*.png'
+input_url = '/Users/metuoku/data/cityscapes/'
 batch_size = 2
-dataset = images_from_folder(input_url, batch_size=batch_size)
-fcn = resnet50_fcn(n_classes=8)
+dataset = cityscapes(input_url,state='train', resize_dims=[128, 256], batch_size=batch_size, limit=1)
+fcn = resnet50_fcn(n_classes=34)
+adam = tf.keras.optimizers.Adam()
 for i in range(10):
-    train(fcn, dataset, tf.keras.optimizers.Adam(), batch_size)
+    b = 0
+    for batch_image in dataset:
+        loss, images, labels, preds = train(fcn, batch_image, adam, batch_size)
+        print(loss)
+        plt.imsave("out/{}_{}.png".format(i, b), images[0])
+
+        plt.imsave("out/{}_{}_lab.png".format(i, b), labels[0])
+        plt.imsave("out/{}_{}_pred.png".format(i, b), preds[0])
+        b += 1
