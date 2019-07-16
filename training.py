@@ -1,9 +1,15 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from tensorflow.python.platform import flags
 
 from data import cityscapes
 from model import resnet50_fcn
 
+FLAGS = flags.FLAGS
+
+flags.DEFINE_integer('batch_size', 2, 'Batch size')
+flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
+flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
 
 # @tf.function
 def augment(image):
@@ -42,15 +48,14 @@ def train(model, batch_data, optimizer, batch_size=1):
         return loss, images, labels, preds
 
 
-input_url = '/Users/metuoku/data/cityscapes/'
-batch_size = 2
-dataset = cityscapes(input_url,state='train', resize_dims=[128, 256], batch_size=batch_size, limit=1)
+resolution = [int(_) for _ in FLAGS.resolution]
+dataset = cityscapes(FLAGS.input, state='train', resize_dims=resolution, batch_size=FLAGS.batch_size, limit=1)
 fcn = resnet50_fcn(n_classes=34)
 adam = tf.keras.optimizers.Adam()
 for i in range(10):
     b = 0
     for batch_image in dataset:
-        loss, images, labels, preds = train(fcn, batch_image, adam, batch_size)
+        loss, images, labels, preds = train(fcn, batch_image, adam, FLAGS.batch_size)
         print(loss)
         plt.imsave("out/{}_{}.png".format(i, b), images[0].numpy())
 
