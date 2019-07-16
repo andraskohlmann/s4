@@ -11,8 +11,10 @@ allow_growth()
 FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('batch_size', 2, 'Batch size')
+flags.DEFINE_integer('limit', -1, 'Limit')
 flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
+
 
 # @tf.function
 def augment(image):
@@ -52,7 +54,13 @@ def train(model, batch_data, optimizer, batch_size=1):
 
 
 resolution = [int(_) for _ in FLAGS.resolution]
-dataset = cityscapes(FLAGS.input, state='train', resize_dims=resolution, batch_size=FLAGS.batch_size, limit=1)
+dataset = cityscapes(
+    FLAGS.input,
+    state='train',
+    resize_dims=resolution,
+    batch_size=FLAGS.batch_size,
+    limit=FLAGS.limit
+)
 fcn = resnet50_fcn(n_classes=34)
 adam = tf.keras.optimizers.Adam()
 for i in range(10):
