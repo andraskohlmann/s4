@@ -27,6 +27,7 @@ def cityscapes(data_url, state, resize_dims, batch_size, limit=-1):
     img_filenames = tf.data.Dataset.from_tensor_slices(tf.constant(img_filenames))
     labels_filenames = tf.data.Dataset.from_tensor_slices(tf.constant(labels_filenames))
     img_labels_filenames = tf.data.Dataset.zip((img_filenames, labels_filenames))
-    dataset = img_labels_filenames.map(parser_wrapper(resize_dims=resize_dims)).take(limit).batch(batch_size).repeat()
+    dataset = img_labels_filenames.map(parser_wrapper(resize_dims=resize_dims))
+    dataset = dataset.take(limit).shuffle(1000).batch(batch_size)
     return dataset
 
