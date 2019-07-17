@@ -97,7 +97,7 @@ for i in range(FLAGS.epoch):
         print('train epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
         for batch_image in tqdm(train_dataset, total=train_size//FLAGS.batch_size):
-            loss, ims, labels, preds = train(fcn, batch_image, adam)
+            loss, ims, lbls, preds = train(fcn, batch_image, adam)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
