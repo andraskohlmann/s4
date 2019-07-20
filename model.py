@@ -27,7 +27,7 @@ def resnet50_fcn(n_classes):
     x = UpSampling2D(name='upsampling_16', size=(stride // 2, stride // 2), interpolation='bilinear')(x)
 
     # merge classifiers
-    pred_16s = Add(name = 'pred_16s')([x, pred_32s])
+    pred_16s = Add(name='pred_16s')([x, pred_32s])
 
     # add 8s classifier
     x = base_model.get_layer('activation_21').output
@@ -36,7 +36,7 @@ def resnet50_fcn(n_classes):
     x = UpSampling2D(name='upsampling_8', size=(stride // 4, stride // 4), interpolation='bilinear')(x)
 
     # merge classifiers
-    pred_8s= Add(name = 'pred_8s')([x, pred_16s])
+    pred_8s = Add(name='pred_8s')([x, pred_16s])
 
     model = Model(inputs=base_model.input, outputs=pred_8s)
     return model

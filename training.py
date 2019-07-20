@@ -20,7 +20,6 @@ flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
 flags.DEFINE_string('tb_dir', 'logs', 'Tensorboard')
 
-
 resolution = [int(_) for _ in FLAGS.resolution]
 train_dataset, train_size = cityscapes(
     FLAGS.input,
@@ -40,7 +39,6 @@ fcn = resnet50_fcn(n_classes=34)
 adam = tf.keras.optimizers.Adam()
 b = 0
 
-
 train_summary_writer = tf.summary.create_file_writer('{}/train'.format(FLAGS.tb_dir))
 val_summary_writer = tf.summary.create_file_writer('{}/val'.format(FLAGS.tb_dir))
 
@@ -48,7 +46,7 @@ for i in range(FLAGS.epoch):
     with train_summary_writer.as_default():
         print('train epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
-        for batch_image in tqdm(train_dataset, total=train_size//FLAGS.batch_size):
+        for batch_image in tqdm(train_dataset, total=train_size // FLAGS.batch_size):
             loss, ims, lbls, preds = train(fcn, batch_image, adam)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:
@@ -65,7 +63,7 @@ for i in range(FLAGS.epoch):
     with val_summary_writer.as_default():
         print('val epoch ', i)
         avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
-        for batch_image in tqdm(val_dataset, total=val_size//FLAGS.batch_size):
+        for batch_image in tqdm(val_dataset, total=val_size // FLAGS.batch_size):
             loss, ims, lbls, preds = validate(fcn, batch_image)
             avg_loss.update_state(loss)
             if 0 < FLAGS.debug_freq < b:

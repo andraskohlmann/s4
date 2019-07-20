@@ -18,6 +18,7 @@ def parser_wrapper(resize_dims):
         label = tf.squeeze(label, -1)
 
         return image, label
+
     return _parse_function
 
 
@@ -34,4 +35,3 @@ def cityscapes(data_url, state, resize_dims, batch_size, limit=-1):
     )
     dataset = dataset.batch(batch_size).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     return dataset, len(img_filenames) if limit == -1 else limit
-
