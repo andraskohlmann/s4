@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from data import cityscapes
 from model import resnet50_fcn
-from tf_functions import train, validate
+from tf_functions import train, validate, valid_mask
 from utils import allow_growth, checkpoints
 
 allow_growth()
@@ -22,7 +22,7 @@ flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes inpu
 flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
 
 resolution = [int(_) for _ in FLAGS.resolution]
-num_classes = 34
+num_classes = 19
 train_dataset, train_size = cityscapes(
     FLAGS.input,
     state='train',
@@ -60,7 +60,8 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
         for batch_image in tqdm(train_dataset, total=train_size // FLAGS.batch_size):
             loss, ims, lbls, preds = train(fcn, batch_image, adam)
             avg_loss.update_state(loss)
-            mIoU.update_state(lbls, preds)
+            valid_lbls, valid_preds = valid_mask(lbls, preds)
+            mIoU.update_state(valid_lbls, valid_preds)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
 
@@ -80,7 +81,8 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
         for batch_image in tqdm(val_dataset, total=val_size // FLAGS.batch_size):
             loss, ims, lbls, preds = validate(fcn, batch_image)
             avg_loss.update_state(loss)
-            mIoU.update_state(lbls, preds)
+            valid_lbls, valid_preds = valid_mask(lbls, preds)
+            mIoU.update_state(valid_lbls, valid_preds)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
 
