@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.python.platform import flags
 from tqdm import tqdm
@@ -6,7 +7,7 @@ from tqdm import tqdm
 from data import cityscapes
 from model import resnet50_fcn
 from tf_functions import train, validate
-from utils import allow_growth
+from utils import allow_growth, checkpoints
 
 allow_growth()
 
@@ -15,10 +16,10 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('batch_size', 2, 'Batch size')
 flags.DEFINE_integer('limit', -1, 'Limit')
 flags.DEFINE_integer('epoch', 10, 'Epoch number')
-flags.DEFINE_integer('debug_freq', -1, 'EDebug output freq')
+flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')
 flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
-flags.DEFINE_string('tb_dir', 'logs', 'Tensorboard')
+flags.DEFINE_boolean('continue', False, 'Continue training from ckpt')
 
 resolution = [int(_) for _ in FLAGS.resolution]
 train_dataset, train_size = cityscapes(
@@ -39,8 +40,13 @@ fcn = resnet50_fcn(n_classes=34)
 adam = tf.keras.optimizers.Adam()
 b = 0
 
-train_summary_writer = tf.summary.create_file_writer('{}/train'.format(FLAGS.tb_dir))
-val_summary_writer = tf.summary.create_file_writer('{}/val'.format(FLAGS.tb_dir))
+# tb logs
+train_summary_writer = tf.summary.create_file_writer('{}/tb/train'.format(FLAGS.log_dir))
+val_summary_writer = tf.summary.create_file_writer('{}/tb/val'.format(FLAGS.log_dir))
+
+# checkpointing
+ckpt, manager = checkpoints(adam, fcn)
+min_val_loss = np.inf
 
 for i in range(FLAGS.epoch):
     with train_summary_writer.as_default():
@@ -74,5 +80,12 @@ for i in range(FLAGS.epoch):
                 b = 0
             else:
                 b += 1
-        tf.summary.scalar('loss', avg_loss.result(), step=i)
+        ckpt.step.assign_add(1)
+        val_loss = avg_loss.result()
+        tf.summary.scalar('loss', val_loss, step=i)
+
+        if min_val_loss > val_loss:
+            manager.save()
+            min_val_loss = val_loss
+
         avg_loss.reset_states()

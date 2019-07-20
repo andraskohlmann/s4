@@ -1,4 +1,7 @@
 import tensorflow as tf
+from tensorflow.python.platform import flags
+
+FLAGS = flags.FLAGS
 
 
 def allow_growth():
@@ -13,3 +16,14 @@ def allow_growth():
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
             print(e)
+
+
+def checkpoints(optimizer, network, max_to_keep=3):
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=network)
+    manager = tf.train.CheckpointManager(ckpt, '{}/tf_ckpts'.format(FLAGS.log_dir), max_to_keep=max_to_keep)
+    ckpt.restore(manager.latest_checkpoint)
+    if manager.latest_checkpoint:
+        print("Restored from {}".format(manager.latest_checkpoint))
+    else:
+        print("Initializing from scratch.")
+    return ckpt, manager
