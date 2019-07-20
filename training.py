@@ -19,9 +19,10 @@ flags.DEFINE_integer('epoch', 10, 'Epoch number')
 flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')
 flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
-flags.DEFINE_boolean('continue', False, 'Continue training from ckpt')
+flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
 
 resolution = [int(_) for _ in FLAGS.resolution]
+num_classes = 34
 train_dataset, train_size = cityscapes(
     FLAGS.input,
     state='train',
@@ -36,7 +37,7 @@ val_dataset, val_size = cityscapes(
     batch_size=FLAGS.batch_size,
     limit=FLAGS.limit
 )
-fcn = resnet50_fcn(n_classes=34)
+fcn = resnet50_fcn(n_classes=num_classes)
 adam = tf.keras.optimizers.Adam()
 b = 0
 
@@ -45,16 +46,21 @@ train_summary_writer = tf.summary.create_file_writer('{}/tb/train'.format(FLAGS.
 val_summary_writer = tf.summary.create_file_writer('{}/tb/val'.format(FLAGS.log_dir))
 
 # checkpointing
-ckpt, manager = checkpoints(adam, fcn)
-min_val_loss = np.inf
+ckpt, manager, init_epoch = checkpoints(adam, fcn)
+# min_val_loss = np.inf
+max_miou = 0
 
-for i in range(FLAGS.epoch):
+# metrics
+avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
+mIoU = tf.keras.metrics.MeanIoU(num_classes=num_classes, dtype=tf.float32)
+
+for i in range(init_epoch, init_epoch + FLAGS.epoch):
     with train_summary_writer.as_default():
         print('train epoch ', i)
-        avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
         for batch_image in tqdm(train_dataset, total=train_size // FLAGS.batch_size):
             loss, ims, lbls, preds = train(fcn, batch_image, adam)
             avg_loss.update_state(loss)
+            mIoU.update_state(lbls, preds)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
 
@@ -64,7 +70,9 @@ for i in range(FLAGS.epoch):
             else:
                 b += 1
         tf.summary.scalar('loss', avg_loss.result(), step=i)
+        tf.summary.scalar('mIoU', mIoU.result(), step=i)
         avg_loss.reset_states()
+        mIoU.reset_states()
 
     with val_summary_writer.as_default():
         print('val epoch ', i)
@@ -72,6 +80,7 @@ for i in range(FLAGS.epoch):
         for batch_image in tqdm(val_dataset, total=val_size // FLAGS.batch_size):
             loss, ims, lbls, preds = validate(fcn, batch_image)
             avg_loss.update_state(loss)
+            mIoU.update_state(lbls, preds)
             if 0 < FLAGS.debug_freq < b:
                 plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
 
@@ -81,11 +90,13 @@ for i in range(FLAGS.epoch):
             else:
                 b += 1
         ckpt.step.assign_add(1)
-        val_loss = avg_loss.result()
-        tf.summary.scalar('loss', val_loss, step=i)
 
-        if min_val_loss > val_loss:
+        tf.summary.scalar('loss', avg_loss.result(), step=i)
+        tf.summary.scalar('mIoU', mIoU.result(), step=i)
+
+        if mIoU.result() > max_miou:
             manager.save()
-            min_val_loss = val_loss
+            max_miou = mIoU.result()
 
         avg_loss.reset_states()
+        mIoU.reset_states()

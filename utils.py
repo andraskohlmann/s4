@@ -22,8 +22,10 @@ def checkpoints(optimizer, network, max_to_keep=3):
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=network)
     manager = tf.train.CheckpointManager(ckpt, '{}/tf_ckpts'.format(FLAGS.log_dir), max_to_keep=max_to_keep)
     ckpt.restore(manager.latest_checkpoint)
-    if manager.latest_checkpoint:
+    init_epoch = 0
+    if manager.latest_checkpoint and FLAGS.cont:
         print("Restored from {}".format(manager.latest_checkpoint))
+        init_epoch = int(manager.latest_checkpoint.split('-')[-1])
     else:
         print("Initializing from scratch.")
-    return ckpt, manager
+    return ckpt, manager, init_epoch
