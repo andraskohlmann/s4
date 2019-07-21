@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.python.platform import flags
 from tqdm import tqdm
+import os
 
 from data import cityscapes
 from model import resnet50_fcn
@@ -19,6 +20,7 @@ flags.DEFINE_integer('epoch', 10, 'Epoch number')
 flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')
 flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
+flags.DEFINE_string('run', 'default', 'Experiment run')
 flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
 
 resolution = [int(_) for _ in FLAGS.resolution]
@@ -42,8 +44,11 @@ adam = tf.keras.optimizers.Adam()
 b = 0
 
 # tb logs
-train_summary_writer = tf.summary.create_file_writer('{}/tb/train'.format(FLAGS.log_dir))
-val_summary_writer = tf.summary.create_file_writer('{}/tb/val'.format(FLAGS.log_dir))
+train_summary_writer = tf.summary.create_file_writer('{}/{}/train'.format(FLAGS.log_dir, FLAGS.run))
+val_summary_writer = tf.summary.create_file_writer('{}/{}/val'.format(FLAGS.log_dir, FLAGS.run))
+if not os.path.exists(os.path.join('out', FLAGS.run)):
+    os.makedirs(os.path.join('out', FLAGS.run), exist_ok=True)
+
 
 # checkpointing
 ckpt, manager, init_epoch = checkpoints(adam, fcn)
@@ -63,10 +68,10 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
             valid_lbls, valid_preds = valid_mask(lbls, preds)
             mIoU.update_state(valid_lbls, valid_preds)
             if 0 < FLAGS.debug_freq < b:
-                plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
+                plt.imsave("out/{}/{}_{}.png".format(FLAGS.run, i, b), ims[0].numpy())
 
-                plt.imsave("out/{}_{}_lab.png".format(i, b), lbls[0].numpy())
-                plt.imsave("out/{}_{}_pred.png".format(i, b), preds[0].numpy())
+                plt.imsave("out/{}/{}_{}_lab.png".format(FLAGS.run, i, b), lbls[0].numpy())
+                plt.imsave("out/{}/{}_{}_pred.png".format(FLAGS.run, i, b), preds[0].numpy())
                 b = 0
             else:
                 b += 1
@@ -84,10 +89,10 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
             valid_lbls, valid_preds = valid_mask(lbls, preds)
             mIoU.update_state(valid_lbls, valid_preds)
             if 0 < FLAGS.debug_freq < b:
-                plt.imsave("out/{}_{}.png".format(i, b), ims[0].numpy())
+                plt.imsave("out/{}/{}_{}.png".format(FLAGS.run, i, b), ims[0].numpy())
 
-                plt.imsave("out/{}_{}_lab.png".format(i, b), lbls[0].numpy())
-                plt.imsave("out/{}_{}_pred.png".format(i, b), preds[0].numpy())
+                plt.imsave("out/{}/{}_{}_lab.png".format(FLAGS.run, i, b), lbls[0].numpy())
+                plt.imsave("out/{}/{}_{}_pred.png".format(FLAGS.run, i, b), preds[0].numpy())
                 b = 0
             else:
                 b += 1
