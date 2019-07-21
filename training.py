@@ -2,12 +2,11 @@ import os
 
 import tensorflow as tf
 from tensorflow.python.platform import flags
-from tqdm import tqdm
 
 from data import cityscapes
 from model import resnet50_fcn
-from tf_functions import train, validate, valid_mask
-from utils import allow_growth, checkpoints, debug_plot
+from tf_functions import train_loop, val_loop
+from utils import allow_growth, checkpoints
 
 allow_growth()
 
@@ -60,16 +59,7 @@ mIoU = tf.keras.metrics.MeanIoU(num_classes=num_classes, dtype=tf.float32)
 for i in range(init_epoch, init_epoch + FLAGS.epoch):
     with train_summary_writer.as_default():
         print('train epoch ', i)
-        for batch_image in tqdm(train_dataset, total=train_size // FLAGS.batch_size):
-            loss, ims, lbls, preds = train(fcn, batch_image, adam)
-            avg_loss.update_state(loss)
-            valid_lbls, valid_preds = valid_mask(lbls, preds)
-            mIoU.update_state(valid_lbls, valid_preds)
-            if 0 < FLAGS.debug_freq < b:
-                debug_plot(ims, lbls, preds, i, b)
-                b = 0
-            else:
-                b += 1
+        train_loop(fcn, adam, train_dataset, avg_loss, mIoU)
         tf.summary.scalar('loss', avg_loss.result(), step=i)
         tf.summary.scalar('mIoU', mIoU.result(), step=i)
         avg_loss.reset_states()
@@ -77,17 +67,7 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
 
     with val_summary_writer.as_default():
         print('val epoch ', i)
-        avg_loss = tf.keras.metrics.Mean(name='loss', dtype=tf.float32)
-        for batch_image in tqdm(val_dataset, total=val_size // FLAGS.batch_size):
-            loss, ims, lbls, preds = validate(fcn, batch_image)
-            avg_loss.update_state(loss)
-            valid_lbls, valid_preds = valid_mask(lbls, preds)
-            mIoU.update_state(valid_lbls, valid_preds)
-            if 0 < FLAGS.debug_freq < b:
-                debug_plot(ims, lbls, preds, i, b)
-                b = 0
-            else:
-                b += 1
+        val_loop(fcn, train_dataset, avg_loss, mIoU)
         ckpt.step.assign_add(1)
 
         tf.summary.scalar('loss', avg_loss.result(), step=i)
