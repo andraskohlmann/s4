@@ -1,14 +1,13 @@
+import os
+
 import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
 from tensorflow.python.platform import flags
 from tqdm import tqdm
-import os
 
 from data import cityscapes
 from model import resnet50_fcn
 from tf_functions import train, validate, valid_mask
-from utils import allow_growth, checkpoints
+from utils import allow_growth, checkpoints, debug_plot
 
 allow_growth()
 
@@ -49,7 +48,6 @@ val_summary_writer = tf.summary.create_file_writer('{}/{}/val'.format(FLAGS.log_
 if not os.path.exists(os.path.join('out', FLAGS.run)):
     os.makedirs(os.path.join('out', FLAGS.run), exist_ok=True)
 
-
 # checkpointing
 ckpt, manager, init_epoch = checkpoints(adam, fcn)
 # min_val_loss = np.inf
@@ -68,10 +66,7 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
             valid_lbls, valid_preds = valid_mask(lbls, preds)
             mIoU.update_state(valid_lbls, valid_preds)
             if 0 < FLAGS.debug_freq < b:
-                plt.imsave("out/{}/{}_{}.png".format(FLAGS.run, i, b), ims[0].numpy())
-
-                plt.imsave("out/{}/{}_{}_lab.png".format(FLAGS.run, i, b), lbls[0].numpy())
-                plt.imsave("out/{}/{}_{}_pred.png".format(FLAGS.run, i, b), preds[0].numpy())
+                debug_plot(ims, lbls, preds, i, b)
                 b = 0
             else:
                 b += 1
@@ -89,10 +84,7 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
             valid_lbls, valid_preds = valid_mask(lbls, preds)
             mIoU.update_state(valid_lbls, valid_preds)
             if 0 < FLAGS.debug_freq < b:
-                plt.imsave("out/{}/{}_{}.png".format(FLAGS.run, i, b), ims[0].numpy())
-
-                plt.imsave("out/{}/{}_{}_lab.png".format(FLAGS.run, i, b), lbls[0].numpy())
-                plt.imsave("out/{}/{}_{}_pred.png".format(FLAGS.run, i, b), preds[0].numpy())
+                debug_plot(ims, lbls, preds, i, b)
                 b = 0
             else:
                 b += 1

@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.python.platform import flags
 
@@ -29,3 +30,9 @@ def checkpoints(optimizer, network, max_to_keep=3):
     else:
         print("Initializing from scratch.")
     return ckpt, manager, init_epoch
+
+
+def debug_plot(images, labels, preds, i, b):
+    plt.imsave("out/{}/{}_{}.png".format(FLAGS.run, i, b), images[0].numpy())
+    plt.imsave("out/{}/{}_{}_lab.png".format(FLAGS.run, i, b), labels[0].numpy())
+    plt.imsave("out/{}/{}_{}_pred.png".format(FLAGS.run, i, b), preds[0].numpy())
