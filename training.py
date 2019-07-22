@@ -67,7 +67,7 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
 
     with val_summary_writer.as_default():
         print('val epoch ', i)
-        val_loop(fcn, train_dataset, avg_loss, mIoU)
+        val_loop(fcn, val_dataset, avg_loss, mIoU)
         ckpt.step.assign_add(1)
 
         tf.summary.scalar('loss', avg_loss.result(), step=i)
