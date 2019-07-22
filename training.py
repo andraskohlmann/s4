@@ -21,19 +21,20 @@ flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes inpu
 flags.DEFINE_string('run', 'default', 'Experiment run')
 flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
 
-resolution = [int(_) for _ in FLAGS.resolution]
+FLAGS.resolution = [int(_) for _ in FLAGS.resolution]
 num_classes = 19
+
 train_dataset, train_size = cityscapes(
     FLAGS.input,
     state='train',
-    resize_dims=resolution,
+    resize_dims=FLAGS.resolution,
     batch_size=FLAGS.batch_size,
     limit=FLAGS.limit
 )
 val_dataset, val_size = cityscapes(
     FLAGS.input,
     state='val',
-    resize_dims=resolution,
+    resize_dims=FLAGS.resolution,
     batch_size=FLAGS.batch_size,
     limit=FLAGS.limit
 )
@@ -59,7 +60,7 @@ mIoU = tf.keras.metrics.MeanIoU(num_classes=num_classes, dtype=tf.float32)
 for i in range(init_epoch, init_epoch + FLAGS.epoch):
     with train_summary_writer.as_default():
         print('train epoch ', i)
-        train_loop(fcn, adam, train_dataset, avg_loss, mIoU)
+        train_loop(fcn, adam, train_dataset, avg_loss, mIoU, iters=train_size // FLAGS.batch_size)
         tf.summary.scalar('loss', avg_loss.result(), step=i)
         tf.summary.scalar('mIoU', mIoU.result(), step=i)
         avg_loss.reset_states()
@@ -67,7 +68,7 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
 
     with val_summary_writer.as_default():
         print('val epoch ', i)
-        val_loop(fcn, val_dataset, avg_loss, mIoU)
+        val_loop(fcn, val_dataset, avg_loss, mIoU, iters=val_size // FLAGS.batch_size)
         ckpt.step.assign_add(1)
 
         tf.summary.scalar('loss', avg_loss.result(), step=i)
