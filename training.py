@@ -16,12 +16,17 @@ flags.DEFINE_integer('batch_size', 2, 'Batch size')
 flags.DEFINE_integer('limit', -1, 'Limit')
 flags.DEFINE_integer('epoch', 10, 'Epoch number')
 flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')
+
+
+flags.DEFINE_string('lr', '0.001', 'learning rate')
+
 flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
 flags.DEFINE_string('run', 'default', 'Experiment run')
 flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
 
 FLAGS.resolution = [int(_) for _ in FLAGS.resolution]
+FLAGS.lr = float(FLAGS.lr)
 num_classes = 19
 
 train_dataset, train_size = cityscapes(
@@ -39,7 +44,7 @@ val_dataset, val_size = cityscapes(
     limit=FLAGS.limit
 )
 fcn = resnet50_fcn(n_classes=num_classes)
-adam = tf.keras.optimizers.Adam()
+adam = tf.keras.optimizers.Adam(lr=FLAGS.lr)
 b = 0
 
 # tb logs
