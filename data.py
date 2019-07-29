@@ -2,7 +2,6 @@ import glob
 import os
 
 import tensorflow as tf
-from tensorflow.python.ops.image_ops_impl import ResizeMethod
 
 
 def parser_wrapper(resize_dims):

@@ -5,7 +5,7 @@ from tensorflow.python.platform import flags
 
 from data import cityscapes
 from model import resnet50_fcn
-from tf_functions import train_loop, val_loop
+from tf_functions import supervised_train_loop, val_loop
 from utils import allow_growth, checkpoints
 
 allow_growth()
@@ -65,7 +65,7 @@ mIoU = tf.keras.metrics.MeanIoU(num_classes=num_classes, dtype=tf.float32)
 for i in range(init_epoch, init_epoch + FLAGS.epoch):
     with train_summary_writer.as_default():
         print('train epoch ', i)
-        train_loop(fcn, adam, train_dataset, avg_loss, mIoU, iters=train_size // FLAGS.batch_size)
+        supervised_train_loop(fcn, adam, train_dataset, avg_loss, mIoU, iters=train_size // FLAGS.batch_size)
         tf.summary.scalar('loss', avg_loss.result(), step=i)
         tf.summary.scalar('mIoU', mIoU.result(), step=i)
         avg_loss.reset_states()
