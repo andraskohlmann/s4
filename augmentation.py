@@ -95,7 +95,7 @@ def augment_labels(labels, boxes, flip_mask):
         box_indices,
         crop_size,
         method='nearest',
-        extrapolation_value=255
+        extrapolation_value=0
     )
 
     # Flip

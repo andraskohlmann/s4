@@ -63,7 +63,7 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
             U_logits = model(unlabeled_images)
             U_logits = tf.stop_gradient(tf.nn.softmax(U_logits))
             U_logits_reversed = reverse_augment_labels(U_logits, boxes, flip_mask)
-            U_average = average_preds(U_logits_reversed)
+            U_average = average_preds(U_logits_reversed, K)
             U_sharp = sharpen(U_average, T)
             U_sharp = tf.tile(U_sharp, [K, 1, 1, 1])
             U_final = augment_labels(U_sharp, boxes, flip_mask)
