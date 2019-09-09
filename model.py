@@ -12,7 +12,7 @@ def resnet50_fcn(n_classes):
     base_model = ResNet50(weights=None, include_top=False, input_tensor=input_tensor)
 
     # add 32s classifier
-    x = base_model.get_layer('activation_48').output
+    x = base_model.get_layer('conv5_block3_out').output
     x = Dropout(0.5)(x)
     x = Conv2D(n_classes, 1, name='pred_32', padding='same')(x)
 
@@ -21,7 +21,7 @@ def resnet50_fcn(n_classes):
     pred_32s = UpSampling2D(size=(stride, stride), interpolation='bilinear')(x)
 
     # add 16s classifier
-    x = base_model.get_layer('activation_39').output
+    x = base_model.get_layer('conv4_block6_out').output
     x = Dropout(0.5)(x)
     x = Conv2D(n_classes, 1, name='pred_16', padding='same')(x)
     x = UpSampling2D(name='upsampling_16', size=(stride // 2, stride // 2), interpolation='bilinear')(x)
@@ -30,7 +30,7 @@ def resnet50_fcn(n_classes):
     pred_16s = Add(name='pred_16s')([x, pred_32s])
 
     # add 8s classifier
-    x = base_model.get_layer('activation_21').output
+    x = base_model.get_layer('conv3_block4_out').output
     x = Dropout(0.5)(x)
     x = Conv2D(n_classes, 1, name='pred_8', padding='same')(x)
     x = UpSampling2D(name='upsampling_8', size=(stride // 4, stride // 4), interpolation='bilinear')(x)

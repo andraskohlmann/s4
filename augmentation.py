@@ -198,7 +198,8 @@ def mixup(images, labels, alpha):
     l = b.sample(images.shape[0])
     l = tf.maximum(l, 1 - l)
     concat_i_l = tf.concat((images, labels), axis=-1)
-    shuffled = tf.random.shuffle(concat_i_l)
+    shuffled = tf.gather(concat_i_l, tf.random.shuffle(tf.range(concat_i_l.shape[0])))
+    # shuffled = tf.random.shuffle(concat_i_l)
     shuffled_i, shuffled_l = shuffled[..., :images.shape[-1]], shuffled[..., images.shape[-1]:]
     mixed_images = [l[i] * images[i] + (1 - l[i]) * shuffled_i[i] for i in range(images.shape[0])]
     mixed_labels = [l[i] * labels[i] + (1 - l[i]) * shuffled_l[i] for i in range(images.shape[0])]

@@ -45,8 +45,9 @@ def supervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters
 
 # @tf.function
 def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters):
+    l = 100
     i = 0
-    b = 234234
+    b = 0
     K = 2
     T = .5
     alpha = 0.75
@@ -58,8 +59,6 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         unlabeled_images, boxes, flip_mask = augment_image(unlabeled_images, K)
         # L = augment_labels(labels, boxes, flip_mask)
         with tf.GradientTape() as tape:
-            X_logits = model(images)
-
             U_logits = model(unlabeled_images)
             U_logits = tf.stop_gradient(tf.nn.softmax(U_logits))
             U_logits_reversed = reverse_augment_labels(U_logits, boxes, flip_mask)
@@ -69,21 +68,39 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
             U_final = augment_labels(U_sharp, boxes, flip_mask)
 
             i_c = tf.concat([images, unlabeled_images], axis=0)
-            one_hot_labels = tf.one_hot(labels, depth=U_final.shape[-1])
+            label_num = U_final.shape[-1]
+            one_hot_labels = tf.one_hot(labels, depth=label_num)
             l_c = tf.concat([one_hot_labels, U_final], axis=0)
             i_mix, l_mix = mixup(i_c, l_c, alpha)
 
-            valid_labels, valid_logits = valid_mask(labels, logits)
-            valid_labels, valid_logits = valid_mask(labels, logits)
+            # valid_labels, valid_logits = valid_mask(labels, logits)
+            # valid_labels, valid_logits = valid_mask(labels, logits)
+            i_labeled = tf.stack(i_mix[:images.shape[0]])
+            i_unlabeled = tf.stack(i_mix[images.shape[0]:])
+            l_labeled = tf.stack(l_mix[:images.shape[0]])
+            l_unlabeled = tf.stack(l_mix[images.shape[0]:])
 
-            loss_s = tf.nn.softmax_cross_entropy_with_logits(labels=labels_x, logits=logits_x)
+            logits_labeled = model(i_labeled)
+            logits_unlabeled = model(i_unlabeled)
+
+            loss_s = tf.nn.softmax_cross_entropy_with_logits(labels=l_labeled, logits=logits_labeled)
             loss_s = tf.reduce_mean(loss_s)
-            loss_unsup = tf.square(labels_y - tf.nn.softmax(logits_y))
-            loss_unsup = tf.reduce_mean(loss_l2u)
-            tf.summary.scalar('losses/xe', loss_xe)
-            tf.summary.scalar('losses/l2u', loss_l2u)
-        # TODO: Gradients
-        # TODO: Metrics
+            loss_unsup = tf.square(logits_unlabeled - l_unlabeled)
+            loss_unsup = tf.reduce_mean(loss_unsup) / label_num
+            loss = loss_s + l * loss_unsup
+        gradients = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
+
+        avg_loss.update_state(loss)
+        preds = tf.argmax(model(images), axis=-1)
+        valid_lbls, valid_preds = valid_mask(labels, preds)
+        mIoU.update_state(valid_lbls, valid_preds)
+        if 0 < FLAGS.debug_freq <= b:
+            debug_plot(images, labels, logits_labeled, i, b)
+            b = 0
+        else:
+            b += 1
+        i += 1
 
 
 # @tf.function
