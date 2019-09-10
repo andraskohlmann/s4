@@ -17,8 +17,8 @@ def augment(images, labels):
         tf.stack([
             tf.random.uniform([batch_size]) * interval - midpoint,
             tf.random.uniform([batch_size]) * interval - midpoint,
-            1 - tf.random.uniform([batch_size]) * interval - midpoint,
-            1 - tf.random.uniform([batch_size]) * interval - midpoint
+            1 - tf.random.uniform([batch_size]) * interval + midpoint,
+            1 - tf.random.uniform([batch_size]) * interval + midpoint
         ]),
         [1, 0]
     )
@@ -61,8 +61,8 @@ def augment_image(images, K=1):
         tf.stack([
             tf.random.uniform([batch_size]) * interval - midpoint,
             tf.random.uniform([batch_size]) * interval - midpoint,
-            1 - tf.random.uniform([batch_size]) * interval - midpoint,
-            1 - tf.random.uniform([batch_size]) * interval - midpoint
+            1 - tf.random.uniform([batch_size]) * interval + midpoint,
+            1 - tf.random.uniform([batch_size]) * interval + midpoint
         ]),
         [1, 0]
     )
@@ -178,7 +178,7 @@ def average_preds(preds, K, all=False):
     return tf.reduce_sum(
         tf.reshape(preds, [FLAGS.batch_size, K, *preds.shape[1:]]),
         axis=1
-    ) / mask_reshaped
+    ) / tf.maximum(1., mask_reshaped)
 
 
 def mixup(images, labels, alpha):
@@ -189,6 +189,6 @@ def mixup(images, labels, alpha):
     shuffled = tf.gather(concat_i_l, tf.random.shuffle(tf.range(concat_i_l.shape[0])))
     # shuffled = tf.random.shuffle(concat_i_l)
     shuffled_i, shuffled_l = shuffled[..., :images.shape[-1]], shuffled[..., images.shape[-1]:]
-    mixed_images = [l[i] * images[i] + (1 - l[i]) * shuffled_i[i] for i in range(images.shape[0])]
-    mixed_labels = [l[i] * labels[i] + (1 - l[i]) * shuffled_l[i] for i in range(images.shape[0])]
+    mixed_images = tf.stack([l[i] * images[i] + (1 - l[i]) * shuffled_i[i] for i in range(images.shape[0])])
+    mixed_labels = tf.stack([l[i] * labels[i] + (1 - l[i]) * shuffled_l[i] for i in range(images.shape[0])])
     return mixed_images, mixed_labels
