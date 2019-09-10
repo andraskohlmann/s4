@@ -169,15 +169,15 @@ def sharpen(p, T=0):
 
 
 def average_preds(preds, K, all=False):
-    mask = preds > 0
-    if all:
-        mask = tf.reduce_all(mask, keepdims=True)
+    mask = tf.reduce_sum(preds, axis=-1, keepdims=True)
+    # if all:
+    #     mask = tf.reduce_all(mask, axis=0, keepdims=True)
     mask_reshaped = tf.reduce_sum(tf.reshape(tf.cast(
         mask, tf.float32),
-        [FLAGS.batch_size, K, *preds.shape[1:]]), axis=1)
+        [K, FLAGS.batch_size, *mask.shape[1:]]), axis=0)
     return tf.reduce_sum(
-        tf.reshape(preds, [FLAGS.batch_size, K, *preds.shape[1:]]),
-        axis=1
+        tf.reshape(preds, [K, FLAGS.batch_size, *preds.shape[1:]]),
+        axis=0
     ) / tf.maximum(1., mask_reshaped)
 
 
