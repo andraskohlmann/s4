@@ -108,7 +108,7 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         i += 1
 
 
-@tf.function
+# @tf.function
 def val_loop(model, val_dataset, avg_loss, mIoU, iters):
     for images, labels in tqdm(val_dataset, total=iters):
         # with tf.device('/GPU:0'):
