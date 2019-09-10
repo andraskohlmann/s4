@@ -169,28 +169,16 @@ def sharpen(p, T=0):
 
 
 def average_preds(preds, K, all=False):
-    if not all:
-        return tf.reduce_sum(
-            tf.reshape(preds, [FLAGS.batch_size, K, *preds.shape[1:]]),
-            axis=1
-        ) * tf.reduce_sum(tf.reshape(
-            tf.cast(
-                preds > 0,
-                tf.float32
-            ),
-            [FLAGS.batch_size, K, *preds.shape[1:]]
-        ), axis=1)
-    else:
-        return tf.reduce_sum(
-            tf.reshape(preds, [FLAGS.batch_size, K, *preds.shape[1:]]),
-            axis=1
-        ) * tf.reduce_sum(tf.reshape(
-            tf.cast(
-                tf.reduce_all(preds > 0, keepdims=True),
-                tf.float32
-            ),
-            [FLAGS.batch_size, K, *preds.shape[1:]]
-        ), axis=1)
+    mask = preds > 0
+    if all:
+        mask = tf.reduce_all(mask, keepdims=True)
+    mask_reshaped = tf.reduce_sum(tf.reshape(tf.cast(
+        mask, tf.float32),
+        [FLAGS.batch_size, K, *preds.shape[1:]]), axis=1)
+    return tf.reduce_sum(
+        tf.reshape(preds, [FLAGS.batch_size, K, *preds.shape[1:]]),
+        axis=1
+    ) / mask_reshaped
 
 
 def mixup(images, labels, alpha):
