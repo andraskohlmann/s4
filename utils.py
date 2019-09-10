@@ -39,3 +39,7 @@ def debug_plot(images, labels, preds, i, b):
     plt.imsave("out/{}/{}_{}2.png".format(FLAGS.run, i, b), images[1].numpy())
     plt.imsave("out/{}/{}_{}2_lab.png".format(FLAGS.run, i, b), labels[1].numpy())
     plt.imsave("out/{}/{}_{}2_pred.png".format(FLAGS.run, i, b), preds[1].numpy())
+
+
+def plot(image):
+    plt.imsave("out.png", image.numpy())

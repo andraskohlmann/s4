@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from augmentation import augment, augment_image, reverse_augment_labels, resize, sharpen, augment_labels, mixup, \
     average_preds
-from utils import debug_plot
+from utils import debug_plot, plot
 
 FLAGS = flags.FLAGS
 
@@ -78,8 +78,8 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         label_num = U_final.shape[-1]
         one_hot_labels = tf.one_hot(labels, depth=label_num)
         l_c = tf.concat([one_hot_labels, U_final], axis=0)
-        i_mix, l_mix = mixup(i_c, l_c, alpha)
-
+        # i_mix, l_mix = mixup(i_c, l_c, alpha)
+        i_mix, l_mix = i_c, l_c
         l_labeled = tf.stack(l_mix[:images.shape[0]])
         l_unlabeled = tf.stack(l_mix[images.shape[0]:])
 
@@ -108,7 +108,7 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         i += 1
 
 
-# @tf.function
+@tf.function
 def val_loop(model, val_dataset, avg_loss, mIoU, iters):
     for images, labels in tqdm(val_dataset, total=iters):
         # with tf.device('/GPU:0'):
