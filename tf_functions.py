@@ -92,7 +92,8 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
             loss_s = tf.reduce_mean(loss_s)
             loss_unsup = tf.square(logits_unlabeled - l_unlabeled)
             loss_unsup = tf.reduce_mean(loss_unsup)
-            loss = loss_s + l * loss_unsup
+            # loss = loss_s + l * loss_unsup
+            loss = loss_unsup
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
 
