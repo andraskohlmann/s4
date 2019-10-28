@@ -40,8 +40,7 @@ val_dataset, val_size = cityscapes(
     FLAGS.input,
     state='val',
     resize_dims=FLAGS.resolution,
-    batch_size=FLAGS.batch_size,
-    take=FLAGS.limit
+    batch_size=FLAGS.batch_size
 )
 fcn = resnet50_fcn(n_classes=num_classes)
 adam = tf.keras.optimizers.Adam(lr=FLAGS.lr)

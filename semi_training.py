@@ -12,9 +12,10 @@ allow_growth()
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('batch_size', 2, 'Batch size')
-flags.DEFINE_integer('limit', -1, 'Limit')
-flags.DEFINE_integer('epoch', 10, 'Epoch number')
+flags.DEFINE_integer('batch_size', 4, 'Batch size')
+flags.DEFINE_integer('unlabeled_batch_size', 2, 'Unlabeled batch size')
+flags.DEFINE_integer('limit', 1200, 'Limit')
+flags.DEFINE_integer('epoch', 100, 'Epoch number')
 flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')
 
 
@@ -22,8 +23,8 @@ flags.DEFINE_string('lr', '0.001', 'learning rate')
 
 flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
 flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
-flags.DEFINE_string('run', 'default', 'Experiment run')
-flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
+flags.DEFINE_string('run', 'baseline_semi_no_mixup_flip', 'Experiment run')
+flags.DEFINE_boolean('cont', True, 'Continue training from ckpt')
 
 FLAGS.resolution = [int(_) for _ in FLAGS.resolution]
 FLAGS.lr = float(FLAGS.lr)
@@ -34,14 +35,16 @@ labeled_dataset, labeled_size = cityscapes(
     state='train',
     resize_dims=FLAGS.resolution,
     batch_size=FLAGS.batch_size,
-    take=FLAGS.limit
+    take=FLAGS.limit,
+    shuffle=True
 )
 unlabeled_dataset, unlabeled_size = cityscapes_unlabeled(
     FLAGS.input,
     state='train',
     resize_dims=FLAGS.resolution,
-    batch_size=FLAGS.batch_size,
-    skip=FLAGS.limit
+    batch_size=FLAGS.unlabeled_batch_size,
+    skip=FLAGS.limit,
+    shuffle=True
 )
 train_dataset = tf.data.Dataset.zip((labeled_dataset, unlabeled_dataset))
 train_size = labeled_size + unlabeled_size
@@ -49,11 +52,11 @@ val_dataset, val_size = cityscapes(
     FLAGS.input,
     state='val',
     resize_dims=FLAGS.resolution,
-    batch_size=FLAGS.batch_size,
-    take=-1
+    batch_size=FLAGS.batch_size
 )
 fcn = resnet50_fcn(n_classes=num_classes)
-adam = tf.keras.optimizers.Adam(lr=FLAGS.lr)
+adam = tf.optimizers.Adam(learning_rate=FLAGS.lr)
+# adam = tf.keras.optimizers.SGD(lr=FLAGS.lr)
 b = 0
 
 # tb logs
@@ -88,7 +91,7 @@ for i in range(init_epoch, init_epoch + FLAGS.epoch):
         tf.summary.scalar('loss', avg_loss.result(), step=i)
         tf.summary.scalar('mIoU', mIoU.result(), step=i)
 
-        if mIoU.result() > max_miou:
+        if mIoU.result() > max_miou or True:
             manager.save()
             max_miou = mIoU.result()
 

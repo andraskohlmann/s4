@@ -4,23 +4,26 @@ from tensorflow.python.platform import flags
 
 FLAGS = flags.FLAGS
 
+INTERVAL = 0.0
+MIDPOINT = 0.0
+FLIP_CHANCE = 0.5
 
+
+# @tf.function
 def augment(images, labels):
     batch_size = images.shape[0]
 
     labels = tf.expand_dims(labels, -1)
     labels = tf.cast(labels, tf.float32)
     # Crop
-    interval = 0.3
-    midpoint = 0.1
     boxes = tf.transpose(
         tf.stack([
-            tf.random.uniform([batch_size]) * interval - midpoint,
-            tf.random.uniform([batch_size]) * interval - midpoint,
-            1 - tf.random.uniform([batch_size]) * interval + midpoint,
-            1 - tf.random.uniform([batch_size]) * interval + midpoint
+            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
+            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
+            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT,
+            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT
         ]),
-        [1, 0]
+        tf.constant([1, 0])
     )
     box_indices = tf.constant(list(range(batch_size)))
     crop_size = FLAGS.resolution
@@ -41,7 +44,7 @@ def augment(images, labels):
     )
 
     # Flip
-    flip_mask = tf.less(tf.random.uniform([batch_size]), 0.5)
+    flip_mask = tf.less(tf.random.uniform([batch_size]), FLIP_CHANCE)
     images = tf.stack([tf.image.flip_left_right(images[i]) if flip_mask[i] else images[i] for i in range(batch_size)])
     labels = tf.stack([tf.image.flip_left_right(labels[i]) if flip_mask[i] else labels[i] for i in range(batch_size)])
     labels = tf.squeeze(labels, -1)
@@ -50,19 +53,18 @@ def augment(images, labels):
     return images, labels
 
 
+@tf.function
 def augment_image(images, K=1):
     images = tf.tile(images, [K, 1, 1, 1])
     batch_size = images.shape[0]
 
     # Crop
-    interval = 0.3
-    midpoint = 0.1
     boxes = tf.transpose(
         tf.stack([
-            tf.random.uniform([batch_size]) * interval - midpoint,
-            tf.random.uniform([batch_size]) * interval - midpoint,
-            1 - tf.random.uniform([batch_size]) * interval + midpoint,
-            1 - tf.random.uniform([batch_size]) * interval + midpoint
+            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
+            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
+            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT,
+            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT
         ]),
         [1, 0]
     )
@@ -77,12 +79,13 @@ def augment_image(images, K=1):
     )
 
     # Flip
-    flip_mask = tf.less(tf.random.uniform([batch_size]), 0.5)
+    flip_mask = tf.less(tf.random.uniform([batch_size]), FLIP_CHANCE)
     images = tf.stack([tf.image.flip_left_right(images[i]) if flip_mask[i] else images[i] for i in range(batch_size)])
 
     return images, boxes, flip_mask
 
 
+@tf.function
 def augment_labels(labels, boxes, flip_mask):
     batch_size = labels.shape[0]
 
@@ -104,6 +107,7 @@ def augment_labels(labels, boxes, flip_mask):
     return labels
 
 
+@tf.function
 def reverse_augment_labels(labels, boxes, flip_mask):
     batch_size = labels.shape[0]
 
@@ -137,6 +141,7 @@ def reverse_augment_labels(labels, boxes, flip_mask):
     return labels
 
 
+@tf.function
 def resize(images, labels):
     labels = tf.expand_dims(labels, -1)
     labels = tf.cast(labels, tf.float32)
@@ -158,6 +163,7 @@ def resize(images, labels):
     return images, labels
 
 
+@tf.function
 def sharpen(p, T=0):
     p_t = tf.pow(p, 1 / T)
     zero_mask = tf.reduce_sum(p_t, axis=-1, keepdims=True) > 0
@@ -168,22 +174,23 @@ def sharpen(p, T=0):
     )
 
 
+@tf.function
 def average_preds(preds, K, all=False):
     mask = tf.reduce_sum(preds, axis=-1, keepdims=True)
     # if all:
     #     mask = tf.reduce_all(mask, axis=0, keepdims=True)
     mask_reshaped = tf.reduce_sum(tf.reshape(tf.cast(
         mask, tf.float32),
-        [K, FLAGS.batch_size, *mask.shape[1:]]), axis=0)
+        [K, FLAGS.unlabeled_batch_size, *mask.shape[1:]]), axis=0)
     return tf.reduce_sum(
-        tf.reshape(preds, [K, FLAGS.batch_size, *preds.shape[1:]]),
+        tf.reshape(preds, [K, FLAGS.unlabeled_batch_size, *preds.shape[1:]]),
         axis=0
     ) / tf.maximum(1., mask_reshaped)
 
 
-def mixup(images, labels, alpha):
-    b = Beta(alpha, alpha)
-    l = b.sample(images.shape[0])
+@tf.function
+def mixup(sampler, images, labels):
+    l = sampler.sample(images.shape[0])
     l = tf.maximum(l, 1 - l)
     concat_i_l = tf.concat((images, labels), axis=-1)
     shuffled = tf.gather(concat_i_l, tf.random.shuffle(tf.range(concat_i_l.shape[0])))
@@ -191,4 +198,4 @@ def mixup(images, labels, alpha):
     shuffled_i, shuffled_l = shuffled[..., :images.shape[-1]], shuffled[..., images.shape[-1]:]
     mixed_images = tf.stack([l[i] * images[i] + (1 - l[i]) * shuffled_i[i] for i in range(images.shape[0])])
     mixed_labels = tf.stack([l[i] * labels[i] + (1 - l[i]) * shuffled_l[i] for i in range(images.shape[0])])
-    return mixed_images, mixed_labels
+    return mixed_images, mixed_labels, shuffled_i, shuffled_l

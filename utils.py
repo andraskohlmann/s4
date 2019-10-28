@@ -1,6 +1,9 @@
 import tensorflow as tf
 from tensorflow.python.platform import flags
 import matplotlib.pyplot as plt
+import numpy as np
+
+from labels import label_to_image
 
 FLAGS = flags.FLAGS
 
@@ -41,5 +44,10 @@ def debug_plot(images, labels, preds, i, b):
     plt.imsave("out/{}/{}_{}2_pred.png".format(FLAGS.run, i, b), preds[1].numpy())
 
 
-def plot(image):
-    plt.imsave("out.png", image.numpy())
+def plot(image, fname="out.png"):
+    img = image.numpy()
+    if len(img.shape) == 3 and img.shape[-1] != 3:
+        img = img.argmax(-1)
+    if len(img.shape) < 3:
+        img = label_to_image(img)
+    plt.imsave(fname, img)
