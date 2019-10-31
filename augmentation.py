@@ -1,12 +1,7 @@
 import tensorflow as tf
-from tensorflow.python.ops.distributions.beta import Beta
-from tensorflow.python.platform import flags
+from absl import flags
 
 FLAGS = flags.FLAGS
-
-INTERVAL = 0.0
-MIDPOINT = 0.0
-FLIP_CHANCE = 0.5
 
 
 # @tf.function
@@ -18,10 +13,10 @@ def augment(images, labels):
     # Crop
     boxes = tf.transpose(
         tf.stack([
-            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
-            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
-            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT,
-            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT
+            tf.random.uniform([batch_size]) * FLAGS.crop - FLAGS.crop_offset,
+            tf.random.uniform([batch_size]) * FLAGS.crop - FLAGS.crop_offset,
+            1 - tf.random.uniform([batch_size]) * FLAGS.crop + FLAGS.crop_offset,
+            1 - tf.random.uniform([batch_size]) * FLAGS.crop + FLAGS.crop_offset
         ]),
         tf.constant([1, 0])
     )
@@ -44,7 +39,7 @@ def augment(images, labels):
     )
 
     # Flip
-    flip_mask = tf.less(tf.random.uniform([batch_size]), FLIP_CHANCE)
+    flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
     images = tf.stack([tf.image.flip_left_right(images[i]) if flip_mask[i] else images[i] for i in range(batch_size)])
     labels = tf.stack([tf.image.flip_left_right(labels[i]) if flip_mask[i] else labels[i] for i in range(batch_size)])
     labels = tf.squeeze(labels, -1)
@@ -61,10 +56,10 @@ def augment_image(images, K=1):
     # Crop
     boxes = tf.transpose(
         tf.stack([
-            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
-            tf.random.uniform([batch_size]) * INTERVAL - MIDPOINT,
-            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT,
-            1 - tf.random.uniform([batch_size]) * INTERVAL + MIDPOINT
+            tf.random.uniform([batch_size]) * FLAGS.crop - FLAGS.crop_offset,
+            tf.random.uniform([batch_size]) * FLAGS.crop - FLAGS.crop_offset,
+            1 - tf.random.uniform([batch_size]) * FLAGS.crop + FLAGS.crop_offset,
+            1 - tf.random.uniform([batch_size]) * FLAGS.crop + FLAGS.crop_offset
         ]),
         [1, 0]
     )
@@ -79,7 +74,7 @@ def augment_image(images, K=1):
     )
 
     # Flip
-    flip_mask = tf.less(tf.random.uniform([batch_size]), FLIP_CHANCE)
+    flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
     images = tf.stack([tf.image.flip_left_right(images[i]) if flip_mask[i] else images[i] for i in range(batch_size)])
 
     return images, boxes, flip_mask
@@ -164,8 +159,8 @@ def resize(images, labels):
 
 
 @tf.function
-def sharpen(p, T=0):
-    p_t = tf.pow(p, 1 / T)
+def sharpen(p):
+    p_t = tf.pow(p, 1 / FLAGS.temperature)
     zero_mask = tf.reduce_sum(p_t, axis=-1, keepdims=True) > 0
     return tf.where(
         condition=zero_mask,

@@ -4,30 +4,18 @@ import tensorflow as tf
 from absl import app
 from absl import flags
 
+from config import define_flags
 from data import cityscapes
 from model import resnet50_fcn
 from tf_functions import supervised_train_loop, val_loop
 from utils import allow_growth, checkpoints
 
 FLAGS = flags.FLAGS
-
-flags.DEFINE_integer('batch_size', 2, 'Batch size')
-flags.DEFINE_integer('limit', -1, 'Limit')
-flags.DEFINE_integer('epoch', 10, 'Epoch number')
-flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')
-
-flags.DEFINE_string('learning_rate', '0.001', 'learning rate')
-
-flags.DEFINE_list('resolution', ['128', '256'], 'Resolution')
-flags.DEFINE_string('input', '/Users/metuoku/data/cityscapes/', 'Cityscapes input folder')
-flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
-flags.DEFINE_string('run', None, 'Experiment run')
-flags.mark_flag_as_required('run')
+define_flags()
 
 
 def main(argv):
     FLAGS.resolution = [int(_) for _ in FLAGS.resolution]
-    FLAGS.learning_rate = float(FLAGS.learning_rate)
     num_classes = 19
 
     allow_growth()
