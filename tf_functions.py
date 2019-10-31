@@ -84,7 +84,7 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         l_unlabeled = tf.stack(l_mix[images.shape[0]:])
 
         with tf.GradientTape() as tape:
-            loss = combined_loss(i_mix, images, l_labeled, l_unlabeled, model)
+            loss = combined_loss(i_mix, l_labeled, l_unlabeled, model)
             # loss = loss_s
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
@@ -121,10 +121,10 @@ def predict_labels(K, boxes, flip_mask, model, unlabeled_images):
 
 
 # @tf.function
-def combined_loss(i_mix, images, l_labeled, l_unlabeled, model):
+def combined_loss(i_mix, l_labeled, l_unlabeled, model):
     logits = model(i_mix)
-    logits_labeled = logits[:images.shape[0]]
-    logits_unlabeled = tf.nn.softmax(logits[images.shape[0]:])
+    logits_labeled = logits[:l_labeled.shape[0]]
+    logits_unlabeled = tf.nn.softmax(logits[l_labeled.shape[0]:])
     # supervised loss
     valid_labels, valid_indices = nonzero_one_hot_mask(l_labeled)
     valid_logits = logits_labeled[valid_indices]
