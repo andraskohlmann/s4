@@ -35,7 +35,7 @@ def nonzero_one_hot_mask(labels):
 def supervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters):
     i = 0
     b = 0
-    for images, labels in tqdm(train_dataset, total=iters):
+    for images, labels in train_dataset:
         # with tf.device('/GPU:0'):
         images, labels = augment(images, labels)
         with tf.GradientTape() as tape:
@@ -64,7 +64,7 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
     i = 0
     b = 0
     beta_distribution = Beta(FLAGS.alpha, FLAGS.alpha)
-    for X, U in tqdm(train_dataset, total=iters):
+    for X, U in train_dataset:
         images, labels = X
         unlabeled_images = U
         # with tf.device('/GPU:0'):
