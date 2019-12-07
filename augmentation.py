@@ -40,8 +40,8 @@ def augment(images, labels):
 
     # Flip
     flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
-    images = tf.stack([tf.image.flip_left_right(images[i]) if flip_mask[i] else images[i] for i in range(batch_size)])
-    labels = tf.stack([tf.image.flip_left_right(labels[i]) if flip_mask[i] else labels[i] for i in range(batch_size)])
+    images = tf.where(flip_mask, tf.image.flip_left_right(images), images).stack()
+    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels).stack()
     labels = tf.squeeze(labels, -1)
     labels = tf.cast(labels, tf.int32)
 
