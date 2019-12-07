@@ -10,6 +10,7 @@ def define_flags():
     flags.DEFINE_integer('epoch', 10, 'Epoch number')
     flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
     flags.DEFINE_boolean('cont', False, 'Continue training from ckpt')
+    flags.DEFINE_string('weights', None, 'resnet pretrained weights')
 
     # Debug
     flags.DEFINE_integer('debug_freq', -1, 'Debug output freq')

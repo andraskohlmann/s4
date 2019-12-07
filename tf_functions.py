@@ -59,7 +59,7 @@ def supervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters
         i += 1
 
 
-# @tf.function
+@tf.function
 def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters):
     i = 0
     b = 0
@@ -93,12 +93,12 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         preds = tf.argmax(model(images), axis=-1)
         valid_lbls, valid_preds = valid_mask_preds(labels, preds)
         mIoU.update_state(valid_lbls, valid_preds)
-        for k in range(FLAGS.batch_size + FLAGS.unlabeled_batch_size * FLAGS.K):
-            plot(i_mix[k], "out/{}/i{}_{}.png".format(FLAGS.run, k, i))
-
-        for k in range(FLAGS.batch_size + FLAGS.unlabeled_batch_size * FLAGS.K):
-            plot(l_c[k], "out/{}/l0{}_{}.png".format(FLAGS.run, k, i))
-            # plot(l_shuffled[k], "out/{}/l1{}_{}.png".format(FLAGS.run, k, i))
+        # for k in range(FLAGS.batch_size + FLAGS.unlabeled_batch_size * FLAGS.K):
+        #     plot(i_mix[k], "out/{}/i{}_{}.png".format(FLAGS.run, k, i))
+        #
+        # for k in range(FLAGS.batch_size + FLAGS.unlabeled_batch_size * FLAGS.K):
+        #     plot(l_c[k], "out/{}/l0{}_{}.png".format(FLAGS.run, k, i))
+        #     # plot(l_shuffled[k], "out/{}/l1{}_{}.png".format(FLAGS.run, k, i))
 
         # if 0 < FLAGS.debug_freq <= b:
         #     debug_plot(images, labels, preds, i, b)

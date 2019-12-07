@@ -33,7 +33,7 @@ def main(argv):
         resize_dims=FLAGS.resolution,
         batch_size=FLAGS.batch_size
     )
-    fcn = resnet50_fcn(n_classes=num_classes)
+    fcn = resnet50_fcn(n_classes=num_classes, weights=FLAGS.weights)
     adam = tf.keras.optimizers.Adam(lr=FLAGS.learning_rate)
     b = 0
 

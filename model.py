@@ -5,11 +5,11 @@ from tensorflow.python.keras.layers import Dropout, Conv2D, UpSampling2D, Add
 import numpy as np
 
 
-def resnet50_fcn(n_classes):
+def resnet50_fcn(n_classes, weights=None):
     # load ResNet
     # input_tensor = Input(shape=(128, 256, 3))
     input_tensor = Input(shape=(None, None, 3))
-    base_model = ResNet50(weights=None, include_top=False, input_tensor=input_tensor)
+    base_model = ResNet50(weights=weights, include_top=False, input_tensor=input_tensor)
 
     # add 32s classifier
     x = base_model.get_layer('conv5_block3_out').output

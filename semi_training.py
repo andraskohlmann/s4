@@ -44,7 +44,7 @@ def main(argv):
         resize_dims=FLAGS.resolution,
         batch_size=FLAGS.batch_size
     )
-    fcn = resnet50_fcn(n_classes=num_classes)
+    fcn = resnet50_fcn(n_classes=num_classes, weights=FLAGS.weights)
     adam = tf.optimizers.Adam(learning_rate=FLAGS.learning_rate)
     # adam = tf.keras.optimizers.SGD(lr=FLAGS.lr)
     b = 0
