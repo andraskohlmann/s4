@@ -40,8 +40,8 @@ def augment(images, labels):
 
     # Flip
     flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
-    images = tf.where(flip_mask, tf.image.flip_left_right(images), images).stack()
-    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels).stack()
+    images = tf.where(flip_mask, tf.image.flip_left_right(images), images)
+    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels)
     labels = tf.squeeze(labels, -1)
     labels = tf.cast(labels, tf.int32)
 
@@ -75,7 +75,7 @@ def augment_image(images, K=1):
 
     # Flip
     flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
-    images = tf.where(flip_mask, tf.image.flip_left_right(images), images).stack()
+    images = tf.where(flip_mask, tf.image.flip_left_right(images), images)
 
     return images, boxes, flip_mask
 
@@ -97,7 +97,7 @@ def augment_labels(labels, boxes, flip_mask):
     )
 
     # Flip
-    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels).stack()
+    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels)
 
     return labels
 
@@ -107,7 +107,7 @@ def reverse_augment_labels(labels, boxes, flip_mask):
     batch_size = tf.shape(labels)[0]
 
     # Flip
-    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels).stack()
+    labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels)
 
     # Crop
     box_indices = tf.range(batch_size)
