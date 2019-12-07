@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:nightly-gpu-py3
+FROM tensorflow/tensorflow:2.0.0-gpu-py3
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
