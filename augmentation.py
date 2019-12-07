@@ -20,7 +20,7 @@ def augment(images, labels):
         ]),
         tf.constant([1, 0])
     )
-    box_indices = tf.constant(list(range(batch_size)))
+    box_indices = tf.range(batch_size)
     crop_size = FLAGS.resolution
     images = tf.image.crop_and_resize(
         images,
@@ -63,7 +63,7 @@ def augment_image(images, K=1):
         ]),
         [1, 0]
     )
-    box_indices = tf.constant(list(range(batch_size)))
+    box_indices = tf.range(batch_size)
     crop_size = FLAGS.resolution
     images = tf.image.crop_and_resize(
         images,
@@ -85,7 +85,7 @@ def augment_labels(labels, boxes, flip_mask):
     batch_size = tf.shape(labels)[0]
 
     # Crop
-    box_indices = tf.constant(list(range(batch_size)))
+    box_indices = tf.range(batch_size)
     crop_size = FLAGS.resolution
     labels = tf.image.crop_and_resize(
         labels,
@@ -110,7 +110,7 @@ def reverse_augment_labels(labels, boxes, flip_mask):
     labels = tf.stack([tf.image.flip_left_right(labels[i]) if flip_mask[i] else labels[i] for i in range(batch_size)])
 
     # Crop
-    box_indices = tf.constant(list(range(batch_size)))
+    box_indices = tf.range(batch_size)
     crop_size = FLAGS.resolution
     xl, yl, xr, yr = tf.unstack(boxes, axis=1)
     xr_o = 1 - xr
