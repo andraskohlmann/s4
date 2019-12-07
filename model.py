@@ -1,8 +1,6 @@
 from tensorflow.python.keras import Input, Model
-from tensorflow.python.keras.applications import ResNet50
+from tensorflow.keras.applications.resnet import ResNet50
 from tensorflow.python.keras.layers import Dropout, Conv2D, UpSampling2D, Add
-
-import numpy as np
 
 
 def resnet50_fcn(n_classes, weights=None):
