@@ -31,7 +31,7 @@ def nonzero_one_hot_mask(labels):
     return valid_labels, valid_indices
 
 
-# @tf.function
+@tf.function
 def supervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters):
     i = 0
     b = 0
