@@ -57,6 +57,7 @@ def supervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, iters
         else:
             b += 1
         i += 1
+    return avg_loss.result(), mIoU.result()
 
 
 @tf.function
@@ -106,7 +107,7 @@ def semisupervised_train_loop(model, optimizer, train_dataset, avg_loss, mIoU, i
         # else:
         #     b += 1
         i += 1
-
+    return avg_loss.result(), mIoU.result()
 
 @tf.function
 def predict_labels(K, boxes, flip_mask, model, unlabeled_images):
@@ -153,3 +154,4 @@ def val_loop(model, val_dataset, avg_loss, mIoU, iters):
         avg_loss.update_state(loss)
         valid_lbls, valid_preds = valid_mask_preds(labels, preds)
         mIoU.update_state(valid_lbls, valid_preds)
+    return avg_loss.result(), mIoU.result()

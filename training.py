@@ -55,23 +55,23 @@ def main(argv):
     for i in range(init_epoch, init_epoch + FLAGS.epoch):
         with train_summary_writer.as_default():
             print('train epoch ', i)
-            supervised_train_loop(fcn, adam, train_dataset, avg_loss, mIoU, iters=train_size // FLAGS.batch_size)
-            tf.summary.scalar('loss', avg_loss.result(), step=i)
-            tf.summary.scalar('mIoU', mIoU.result(), step=i)
+            loss, miou = supervised_train_loop(fcn, adam, train_dataset, avg_loss, mIoU, iters=train_size // FLAGS.batch_size)
+            tf.summary.scalar('loss', loss, step=i)
+            tf.summary.scalar('mIoU', miou, step=i)
             avg_loss.reset_states()
             mIoU.reset_states()
 
         with val_summary_writer.as_default():
             print('val epoch ', i)
-            val_loop(fcn, val_dataset, avg_loss, mIoU, iters=val_size // FLAGS.batch_size)
+            loss, miou = val_loop(fcn, val_dataset, avg_loss, mIoU, iters=val_size // FLAGS.batch_size)
             ckpt.step.assign_add(1)
 
-            tf.summary.scalar('loss', avg_loss.result(), step=i)
-            tf.summary.scalar('mIoU', mIoU.result(), step=i)
+            tf.summary.scalar('loss', loss, step=i)
+            tf.summary.scalar('mIoU', miou, step=i)
 
-            if mIoU.result() > max_miou:
+            if miou > max_miou:
                 manager.save()
-                max_miou = mIoU.result()
+                max_miou = miou
 
             avg_loss.reset_states()
             mIoU.reset_states()
