@@ -6,7 +6,7 @@ FLAGS = flags.FLAGS
 
 # @tf.function
 def augment(images, labels):
-    batch_size = images.shape[0]
+    batch_size = tf.shape(images)[0]
 
     labels = tf.expand_dims(labels, -1)
     labels = tf.cast(labels, tf.float32)
@@ -51,7 +51,7 @@ def augment(images, labels):
 @tf.function
 def augment_image(images, K=1):
     images = tf.tile(images, [K, 1, 1, 1])
-    batch_size = images.shape[0]
+    batch_size = tf.shape(images)[0]
 
     # Crop
     boxes = tf.transpose(
@@ -82,7 +82,7 @@ def augment_image(images, K=1):
 
 @tf.function
 def augment_labels(labels, boxes, flip_mask):
-    batch_size = labels.shape[0]
+    batch_size = tf.shape(labels)[0]
 
     # Crop
     box_indices = tf.constant(list(range(batch_size)))
@@ -104,7 +104,7 @@ def augment_labels(labels, boxes, flip_mask):
 
 @tf.function
 def reverse_augment_labels(labels, boxes, flip_mask):
-    batch_size = labels.shape[0]
+    batch_size = tf.shape(labels)[0]
 
     # Flip
     labels = tf.stack([tf.image.flip_left_right(labels[i]) if flip_mask[i] else labels[i] for i in range(batch_size)])
