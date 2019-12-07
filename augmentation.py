@@ -39,7 +39,7 @@ def augment(images, labels):
     )
 
     # Flip
-    flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
+    flip_mask = tf.reshape(tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob), [-1, 1, 1, 1])
     images = tf.where(flip_mask, tf.image.flip_left_right(images), images)
     labels = tf.where(flip_mask, tf.image.flip_left_right(labels), labels)
     labels = tf.squeeze(labels, -1)
@@ -74,7 +74,7 @@ def augment_image(images, K=1):
     )
 
     # Flip
-    flip_mask = tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob)
+    flip_mask = tf.reshape(tf.less(tf.random.uniform([batch_size]), FLAGS.flip_prob), [-1, 1, 1, 1])
     images = tf.where(flip_mask, tf.image.flip_left_right(images), images)
 
     return images, boxes, flip_mask
